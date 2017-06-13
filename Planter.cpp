@@ -11,8 +11,8 @@ class Planter {
     char * id;
     int motorPin;
     int sensorPin;
-    int hydratedLevel;
-    int deHydratedLevel;
+    int hydratedLevel; // at this level planter won't try to plant it anymore
+    int deHydratedLevel; // at this level planter will try to plan it
     //int plantTime = 10 * 1000; // planting time 10 secs, then stop
     //int delayBetweenPlanting = 2 * 60 * 1000; // we want water to absorb for 2 mins to read correct measurements
     uint32_t lastPlantingStartTime = 0; // planting time 10 secs, then stop

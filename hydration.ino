@@ -1,7 +1,7 @@
 #include "Planter.cpp"
 
-Planter planter1(8, A0, 320, "P8");
-Planter planter2(9, A1, 320, "P9");
+Planter planter1(8, A0, "P8", 250, 320);
+Planter planter2(9, A1, "P9", 250, 320);
 
 void setup() {
   Serial.begin(9600);

@@ -11,13 +11,14 @@ class Planter {
     char * id;
     int motorPin;
     int sensorPin;
+    int hydrationLevel;
     //int plantTime = 10 * 1000; // planting time 10 secs, then stop
     //int delayBetweenPlanting = 2 * 60 * 1000; // we want water to absorb for 2 mins to read correct measurements
     uint32_t lastPlantingStartTime = 0; // planting time 10 secs, then stop
     int plantingStatus = LOW;
     uint32_t inDelayUntil = 0;
   public:
-    Planter(int motorPin, int sensorPin, char * id): motorPin(motorPin), sensorPin(sensorPin), id(id) {
+    Planter(int motorPin, int sensorPin, int hydrationLevel, string id): motorPin(motorPin), sensorPin(sensorPin), hydrationLevel(hydrationLevel), id(id) {
 
     }
 
@@ -102,11 +103,8 @@ class Planter {
       } else if (sensorValue >= 320) {
         log(sensorValue, " - Soil is DRYISH");
         ret = HIGH;
-      } else if (sensorValue > 250) {
-        log(sensorValue, " - Sensor in HUMID, OK");
-        ret = LOW;
-      } else if (sensorValue < 250) {
-        log(sensorValue, " - Sensor in WATER, OK");
+      } else if (sensorValue > hydrationLevel) {
+        log(sensorValue, " - Sensor in HUMID/WATER, OK");
         ret = LOW;
       }
       return ret;

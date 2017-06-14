@@ -3,13 +3,12 @@
 
 #include "Arduino.h"
 
-class Planter
-{
-  public:
+class Planter {
+public:
     Planter();
-    
-  private:
-    
+
+private:
+
 };
 
 #endif

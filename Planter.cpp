@@ -108,7 +108,6 @@ public:
     }
 
     int getSensorStatus() {
-        int ret = LOW;
         int sensorValue = analogRead(sensorPin); //take a sample
         if (sensorValue >= 1000) {
             log(sensorValue, " - Sensor is not in the Soil or DISCONNECTED");
@@ -119,6 +118,8 @@ public:
             log(sensorValue, " - Soil is DRYISH");
         } else if (sensorValue > hydratedLevel) {
             log(sensorValue, " - Sensor in HUMID/WATER, OK");
+        } else {
+            log(sensorValue, " - Sensor in WATER, OK");
         }
         int ret;
         if (sensorValue < 1000 && sensorValue > deHydratedLevel) {

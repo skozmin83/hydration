@@ -3,8 +3,8 @@
 
 static const uint32_t MIN_PLANT_TIME_INTERVAL = 600000; // let soil to soak for 10 mins
 static const uint32_t PLANT_TIME = 10000; // plant for 30 secs once per 10 mins
-//static const uint32_t CHECK_INTERVAL = 300000; // check every 5 mins
-static const uint32_t CHECK_INTERVAL = 10000; // check every 5 mins
+static const uint32_t CHECK_INTERVAL = 300000; // check every 5 mins
+//static const uint32_t CHECK_INTERVAL = 10000; // check every 5 mins
 
 class Planter {
 private:
@@ -12,6 +12,7 @@ private:
     int cyclesRun = 0;
     int motorPin;
     int sensorPin;
+    int sensorPowerPin;
     int hydratedLevel; // at this level planter won't try to plant it anymore
     int deHydratedLevel; // at this level planter will try to plan it
     //int plantTime = 10 * 1000; // planting time 10 secs, then stop
@@ -20,9 +21,10 @@ private:
     int plantingStatus = LOW;
     uint32_t inDelayUntil = 0;
 public:
-    Planter(int motorPin, int sensorPin, char *id, int hydratedLevel = 250, int deHydratedLevel = 320) :
+    Planter(int motorPin, int sensorPin, int sensorPowerPin, char *id, int hydratedLevel = 250, int deHydratedLevel = 320) :
             motorPin(motorPin),
             sensorPin(sensorPin),
+            sensorPowerPin(sensorPowerPin),
             hydratedLevel(hydratedLevel),
             deHydratedLevel(deHydratedLevel),
             id(id) {
@@ -87,10 +89,12 @@ public:
         log("PLANT_TIME:", PLANT_TIME);
         log("motorPin:", motorPin);
         log("sensorPin:", sensorPin);
+        log("sensorPowerPin:", sensorPowerPin);
         log("hydratedLevel:", hydratedLevel);
         log("deHydratedLevel:", deHydratedLevel);
         pinMode(sensorPin, INPUT);
         pinMode(motorPin, OUTPUT);
+        pinMode(sensorPowerPin, OUTPUT);
         plantOff();
     }
 
@@ -108,7 +112,10 @@ public:
     }
 
     int getSensorStatus() {
+        digitalWrite(sensorPowerPin, HIGH);
+        delay(10);
         int sensorValue = analogRead(sensorPin); //take a sample
+        digitalWrite(sensorPowerPin, LOW);
         if (sensorValue >= 1000) {
             log(sensorValue, " - Sensor is not in the Soil or DISCONNECTED");
             // don't do anything as most probably curciut has sensor broken or disconnected. we can overplant

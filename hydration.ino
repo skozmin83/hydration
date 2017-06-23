@@ -10,6 +10,7 @@ void setup() {
 }
 
 void loop() {
+  // todo use https://www.gammon.com.au/serial for non-blocking read to get plan config/status
     planter1.loop();
     planter2.loop();
 }

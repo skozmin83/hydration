@@ -15,16 +15,17 @@ private:
     int sensorPowerPin;
     int hydratedLevel; // at this level planter won't try to plant it anymore
     int deHydratedLevel; // at this level planter will try to plan it
-    //int plantTime = 10 * 1000; // planting time 10 secs, then stop
+    int plantTime; // planting time 10 secs, then stop
     //int delayBetweenPlanting = 2 * 60 * 1000; // we want water to absorb for 2 mins to read correct measurements
     uint32_t lastPlantingStartTime = 0; // planting time 10 secs, then stop
     int plantingStatus = LOW;
     uint32_t inDelayUntil = 0;
 public:
-    Planter(int motorPin, int sensorPin, int sensorPowerPin, char *id, int hydratedLevel = 250, int deHydratedLevel = 320) :
+    Planter(int motorPin, int sensorPin, int sensorPowerPin, char *id, int plantTime = PLANT_TIME, int hydratedLevel = 250, int deHydratedLevel = 320) :
             motorPin(motorPin),
             sensorPin(sensorPin),
             sensorPowerPin(sensorPowerPin),
+            plantTime(plantTime),
             hydratedLevel(hydratedLevel),
             deHydratedLevel(deHydratedLevel),
             id(id) {
@@ -48,7 +49,7 @@ public:
         } else { // we need to plant according to sensor
             if (plantingStatus == HIGH) { // check if we've been planting already
                 log("Already planting, check for how long and if we need to stop. ");
-                if (currentTime - lastPlantingStartTime > PLANT_TIME) { // already planting more than 10 secs, shut down
+                if (currentTime - lastPlantingStartTime > plantTime) { // already planting more than 10 secs, shut down
                     log("Shut down, planting for more than secs:", (currentTime - lastPlantingStartTime) / 1000);
                     plantOff();
                     delayFor(CHECK_INTERVAL);
@@ -86,7 +87,7 @@ public:
     void setup() {
         log("CHECK_INTERVAL:", CHECK_INTERVAL);
         log("MIN_PLANT_TIME_INTERVAL:", MIN_PLANT_TIME_INTERVAL);
-        log("PLANT_TIME:", PLANT_TIME);
+        log("plantTime:", plantTime);
         log("motorPin:", motorPin);
         log("sensorPin:", sensorPin);
         log("sensorPowerPin:", sensorPowerPin);

@@ -135,6 +135,7 @@ public:
         } else {
             ret = LOW;
         }
+        log((uint64_t)((sensorValue / (double)deHydratedLevel) *100), "% dry. ");
         return ret;
     }
 

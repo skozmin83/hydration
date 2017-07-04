@@ -1,15 +1,21 @@
 #include "Arduino.h"
 //#include "Planter.h"
 
-static const uint32_t MIN_PLANT_TIME_INTERVAL = 600000; // let soil to soak for 10 mins
+#define ONE_HOUR 3600000
+#define FOUR_HOURS 14400000
+#define EIGHT_HOURS 28800000
+#define FORTY_EIGHT_HOURS 172800000
+
+static const uint32_t MIN_PLANT_TIME_INTERVAL = FOUR_HOURS; // we only allow to plant it each 8 hours
+static const uint32_t MAX_NON_PLANT_TIME_INTERVAL = FORTY_EIGHT_HOURS; // in case sensor broke we still want to plan it just in case. so max non-planting time is 48hours
 static const uint32_t PLANT_TIME = 10000; // plant for 30 secs once per 10 mins
 static const uint32_t CHECK_INTERVAL = 300000; // check every 5 mins
-//static const uint32_t CHECK_INTERVAL = 10000; // check every 5 mins
 
 class Planter {
 private:
     char *id;
     int cyclesRun = 0;
+    int cautiousCyclesRun = 0;
     int motorPin;
     int sensorPin;
     int sensorPowerPin;
@@ -17,6 +23,7 @@ private:
     int deHydratedLevel; // at this level planter will try to plan it
     int plantTime; // planting time 10 secs, then stop
     //int delayBetweenPlanting = 2 * 60 * 1000; // we want water to absorb for 2 mins to read correct measurements
+    uint32_t startTime = 0;
     uint32_t lastPlantingStartTime = 0; // planting time 10 secs, then stop
     int plantingStatus = LOW;
     uint32_t inDelayUntil = 0;
@@ -43,9 +50,17 @@ public:
         int newPlantingStatus = getSensorStatus();
 
         if (newPlantingStatus == LOW) {
-            log("No need to plan, shut down and wait for the next check.");
-            plantOff();
-            delayFor(CHECK_INTERVAL); // wait for 2 mins before the next check
+            if ((currentTime - lastPlantingStartTime > MAX_NON_PLANT_TIME_INTERVAL)
+                     && (currentTime - startTime > MAX_NON_PLANT_TIME_INTERVAL)) {
+                log("Haven't planted for long period of time. Starting new planting cycle, as last time planted secs ago:",
+                    (currentTime - lastPlantingStartTime) / 1000);
+                cautiousCyclesRun++;
+                plantOn();
+            } else {
+                log("No need to plan, shut down and wait for the next check.");
+                plantOff();
+                delayFor(CHECK_INTERVAL); // wait for 2 mins before the next check
+            }
         } else { // we need to plant according to sensor
             if (plantingStatus == HIGH) { // check if we've been planting already
                 log("Already planting, check for how long and if we need to stop. ");
@@ -61,9 +76,9 @@ public:
                 }
             } else { // new planting cycle
                 log("Sensor says need to plant, check if it's not too often. ");
+                // check that we planted more than 2 mins ago, or just started
                 if (lastPlantingStartTime == 0
-                    || currentTime - lastPlantingStartTime >
-                       MIN_PLANT_TIME_INTERVAL) { // check that we planted more than 2 mins ago, or just started
+                    || currentTime - lastPlantingStartTime > MIN_PLANT_TIME_INTERVAL) {
                     // just start
                     log("Starting new planting cycle, as last time planted secs ago:",
                         (currentTime - lastPlantingStartTime) / 1000);
@@ -97,6 +112,7 @@ public:
         pinMode(motorPin, OUTPUT);
         pinMode(sensorPowerPin, OUTPUT);
         plantOff();
+        startTime = millis();
     }
 
     void plantOn() {
@@ -119,7 +135,7 @@ public:
         digitalWrite(sensorPowerPin, LOW);
         if (sensorValue >= 1000) {
             log(sensorValue, " - Sensor is not in the Soil or DISCONNECTED");
-            // don't do anything as most probably curciut has sensor broken or disconnected. we can overplant
+            // don't do anything as most probably circuit has sensor broken or disconnected. we can overplant
         } else if (sensorValue >= 600) {
             log(sensorValue, " - Soil is DRY");
         } else if (sensorValue >= deHydratedLevel) {
@@ -158,8 +174,10 @@ public:
 
     void printStartOfLine() {
         Serial.print(id);
-        Serial.print(" (");
+        Serial.print(" c(");
         Serial.print(cyclesRun);
+        Serial.print(")s(");
+        Serial.print(cautiousCyclesRun);
         Serial.print("): ");
     }
 

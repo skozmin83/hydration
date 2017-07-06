@@ -47,8 +47,21 @@ public:
         if (inDelayUntil > currentTime) {
             return;
         }
+        if (plantingStatus == HIGH) { // check if we've been planting already
+            log("Already planting, check for how long and if we need to stop. ");
+            if (currentTime - lastPlantingStartTime > plantTime) { // already planting more than 10 secs, shut down
+                log("Shut down, planting for more than secs:", (currentTime - lastPlantingStartTime) / 1000);
+                plantOff();
+                delayFor(CHECK_INTERVAL);
+            } else {// to make sure we're not planting for ever
+                log("Delay for a sec, to wait until planting cycle is over. Cur planting secs: ",
+                    (currentTime - lastPlantingStartTime) / 1000);
+                // just delay for a sec, to check if it's enough planting yet
+                delayFor(1000);
+            }
+            return; // exit a loop here, as don't need to sense moisture level yet
+        }
         int newPlantingStatus = getSensorStatus();
-
         if (newPlantingStatus == LOW) {
             if ((currentTime - lastPlantingStartTime > MAX_NON_PLANT_TIME_INTERVAL)
                      && (currentTime - startTime > MAX_NON_PLANT_TIME_INTERVAL)) {
@@ -58,39 +71,26 @@ public:
                 plantOn();
             } else {
                 log("No need to plan, shut down and wait for the next check.");
-                plantOff();
+                //plantOff();
                 delayFor(CHECK_INTERVAL); // wait for 2 mins before the next check
             }
         } else { // we need to plant according to sensor
-            if (plantingStatus == HIGH) { // check if we've been planting already
-                log("Already planting, check for how long and if we need to stop. ");
-                if (currentTime - lastPlantingStartTime > plantTime) { // already planting more than 10 secs, shut down
-                    log("Shut down, planting for more than secs:", (currentTime - lastPlantingStartTime) / 1000);
-                    plantOff();
-                    delayFor(CHECK_INTERVAL);
-                } else {// to make sure we're not planting for ever
-                    log("Delay for a sec, to wait until planting cycle is over. Cur planting secs: ",
-                        (currentTime - lastPlantingStartTime) / 1000);
-                    // just delay for a sec, to check if it's enough planting yet
-                    delayFor(1000);
-                }
-            } else { // new planting cycle
-                log("Sensor says need to plant, check if it's not too often. ");
-                // check that we planted more than 2 mins ago, or just started
-                if (lastPlantingStartTime == 0
-                    || currentTime - lastPlantingStartTime > MIN_PLANT_TIME_INTERVAL) {
-                    // just start
-                    log("Starting new planting cycle, as last time planted secs ago:",
-                        (currentTime - lastPlantingStartTime) / 1000);
-                    cyclesRun++;
-                    plantOn();
-                    //delayFor(plantTime / 2); // plant for half period, so we check more often and mb sensor would say it's enough
-                } else {
-                    log("Even though soil is dry, don't start, as just planted secs ago:",
-                        (currentTime - lastPlantingStartTime) / 1000);
-                    plantOff();
-                    delayFor(CHECK_INTERVAL);
-                }
+            // new planting cycle
+            log("Sensor says need to plant, check if it's not too often. ");
+            // check that we planted more than 2 mins ago, or just started
+            if (lastPlantingStartTime == 0
+                || currentTime - lastPlantingStartTime > MIN_PLANT_TIME_INTERVAL) {
+                // just start
+                log("Starting new planting cycle, as last time planted secs ago:",
+                    (currentTime - lastPlantingStartTime) / 1000);
+                cyclesRun++;
+                plantOn();
+                //delayFor(plantTime / 2); // plant for half period, so we check more often and mb sensor would say it's enough
+            } else {
+                log("Even though soil is dry, don't start, as just planted secs ago:",
+                    (currentTime - lastPlantingStartTime) / 1000);
+                //plantOff();
+                delayFor(CHECK_INTERVAL);
             }
         }
     }

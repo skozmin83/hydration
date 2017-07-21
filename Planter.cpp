@@ -23,6 +23,7 @@ private:
     int deHydratedLevel; // at this level planter will try to plan it
     int plantTime; // planting time 10 secs, then stop
     //int delayBetweenPlanting = 2 * 60 * 1000; // we want water to absorb for 2 mins to read correct measurements
+    uint32_t currentTime = 0;
     uint32_t startTime = 0;
     uint32_t lastPlantingStartTime = 0; // planting time 10 secs, then stop
     int plantingStatus = LOW;
@@ -43,19 +44,18 @@ public:
     }
 
     void loop() {
-        uint32_t currentTime = millis();
+        currentTime = millis();
         if (inDelayUntil > currentTime) {
             return;
         }
         if (plantingStatus == HIGH) { // check if we've been planting already
             log("Already planting, check for how long and if we need to stop. ");
             if (currentTime - lastPlantingStartTime > plantTime) { // already planting more than 10 secs, shut down
-                log("Shut down, planting for more than secs:", (currentTime - lastPlantingStartTime) / 1000);
+                log("Shut down, has been planting for specified period of time. ");
                 plantOff();
                 delayFor(CHECK_INTERVAL);
             } else {// to make sure we're not planting for ever
-                log("Delay for a sec, to wait until planting cycle is over. Cur planting secs: ",
-                    (currentTime - lastPlantingStartTime) / 1000);
+                log("Delay for a sec, to wait until planting cycle is over. ");
                 // just delay for a sec, to check if it's enough planting yet
                 delayFor(1000);
             }
@@ -65,12 +65,11 @@ public:
         if (newPlantingStatus == LOW) {
             if ((currentTime - lastPlantingStartTime > MAX_NON_PLANT_TIME_INTERVAL)
                      && (currentTime - startTime > MAX_NON_PLANT_TIME_INTERVAL)) {
-                log("Haven't planted for long period of time. Starting new planting cycle, as last time planted secs ago:",
-                    (currentTime - lastPlantingStartTime) / 1000);
+                log("Haven't planted for long period of time. Starting new planting cycle. ");
                 cautiousCyclesRun++;
                 plantOn();
             } else {
-                log("No need to plan, shut down and wait for the next check.");
+                log("No need to plant, wait for the next check. ");
                 //plantOff();
                 delayFor(CHECK_INTERVAL); // wait for 2 mins before the next check
             }
@@ -81,14 +80,12 @@ public:
             if (lastPlantingStartTime == 0
                 || currentTime - lastPlantingStartTime > MIN_PLANT_TIME_INTERVAL) {
                 // just start
-                log("Starting new planting cycle, as last time planted secs ago:",
-                    (currentTime - lastPlantingStartTime) / 1000);
+                log("Starting new planting cycle, as planted too long ago. ");
                 cyclesRun++;
                 plantOn();
                 //delayFor(plantTime / 2); // plant for half period, so we check more often and mb sensor would say it's enough
             } else {
-                log("Even though soil is dry, don't start, as just planted secs ago:",
-                    (currentTime - lastPlantingStartTime) / 1000);
+                log("Even though soil is dry, don't start, as just planted.");
                 //plantOff();
                 delayFor(CHECK_INTERVAL);
             }
@@ -146,7 +143,7 @@ public:
             log(sensorValue, " - Sensor in WATER, OK");
         }
         int ret;
-        if (sensorValue < 1000 && sensorValue > deHydratedLevel) {
+        if (sensorValue < 1000 && sensorValue >= deHydratedLevel) {
             ret = HIGH;
         } else {
             ret = LOW;
@@ -178,6 +175,8 @@ public:
         Serial.print(cyclesRun);
         Serial.print(")s(");
         Serial.print(cautiousCyclesRun);
+        Serial.print(")psa(");
+        Serial.print((currentTime - lastPlantingStartTime) / 1000);
         Serial.print("): ");
     }
 
